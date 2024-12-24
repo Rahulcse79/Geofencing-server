@@ -16,7 +16,7 @@ const checkPassword = async (HashPassword, password) => {
 // Function to generate a token using JWT
 const GenerateToken = (username) => {
     try {
-      const token = jwt.sign({ username: username }, secretKey, { expiresIn: '12h' });
+      const token = jwt.sign({ username: username }, secretKey, { expiresIn: '1y' });
       return token;
     } catch (error) {
       throw new Error('Error generating the token');

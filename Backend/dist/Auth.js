@@ -42,7 +42,7 @@ var GenerateToken = function GenerateToken(username) {
     var token = jwt.sign({
       username: username
     }, secretKey, {
-      expiresIn: '12h'
+      expiresIn: '1y'
     });
     return token;
   } catch (error) {

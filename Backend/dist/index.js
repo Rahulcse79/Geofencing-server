@@ -1,5 +1,9 @@
 "use strict";
 
+function _toConsumableArray(r) { return _arrayWithoutHoles(r) || _iterableToArray(r) || _unsupportedIterableToArray(r) || _nonIterableSpread(); }
+function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function _iterableToArray(r) { if ("undefined" != typeof Symbol && null != r[Symbol.iterator] || null != r["@@iterator"]) return Array.from(r); }
+function _arrayWithoutHoles(r) { if (Array.isArray(r)) return _arrayLikeToArray(r); }
 function _createForOfIteratorHelper(r, e) { var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (!t) { if (Array.isArray(r) || (t = _unsupportedIterableToArray(r)) || e && r && "number" == typeof r.length) { t && (r = t); var _n = 0, F = function F() {}; return { s: F, n: function n() { return _n >= r.length ? { done: !0 } : { done: !1, value: r[_n++] }; }, e: function e(r) { throw r; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var o, a = !0, u = !1; return { s: function s() { t = t.call(r); }, n: function n() { var r = t.next(); return a = r.done, r; }, e: function e(r) { u = !0, o = r; }, f: function f() { try { a || null == t["return"] || t["return"](); } finally { if (u) throw o; } } }; }
 function _unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return _arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? _arrayLikeToArray(r, a) : void 0; } }
 function _arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
@@ -28,7 +32,7 @@ var wss = new WebSocket.Server({
   server: server
 });
 var websocketOnAndOff = true;
-var AlertOnAndOff = true;
+var ThreadOnAndOff = true;
 var Timer = 5000; // Thread run timer.
 
 // Server configuration.
@@ -46,6 +50,23 @@ var MailText = process.env.MAIL_TEXT || "Hello,\n\nThe following members are out
 
 // Run time globle data structure.
 var connections = {};
+
+// In-memory store for OTPs (for demonstration purposes only)
+var otpStore = {};
+
+// Function to delete otps.
+var deleteOldOtps = function deleteOldOtps() {
+  var currentTime = Date.now();
+  var expirationTime = 5 * 60 * 1000;
+  for (var email in otpStore) {
+    if (otpStore.hasOwnProperty(email)) {
+      var timestamp = otpStore[email].timestamp;
+      if (currentTime - timestamp > expirationTime) {
+        delete otpStore[email];
+      }
+    }
+  }
+};
 
 // Websocket code.
 wss.on('connection', function (ws, req) {
@@ -201,10 +222,10 @@ var checkDeviceOutsidePolygon = /*#__PURE__*/function () {
   };
 }();
 
-// Function of sending mail.
+// Function of sending mail to multiple user.
 var Sendmail = /*#__PURE__*/function () {
   var _ref3 = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee3(username, memberList) {
-    var transporter, mailOptions;
+    var transporter, mailotpions;
     return _regeneratorRuntime().wrap(function _callee3$(_context3) {
       while (1) switch (_context3.prev = _context3.next) {
         case 0:
@@ -217,7 +238,7 @@ var Sendmail = /*#__PURE__*/function () {
               pass: MailPassword
             }
           });
-          mailOptions = {
+          mailotpions = {
             from: MailUser,
             to: username,
             subject: MailSubject,
@@ -225,7 +246,7 @@ var Sendmail = /*#__PURE__*/function () {
           };
           _context3.prev = 2;
           _context3.next = 5;
-          return transporter.sendMail(mailOptions);
+          return transporter.sendMail(mailotpions);
         case 5:
           console.log("Email sent successfully to: ".concat(username));
           _context3.next = 11;
@@ -347,21 +368,21 @@ function AllFunctionOfThread() {
   return _AllFunctionOfThread.apply(this, arguments);
 } // Thread worker.
 function _AllFunctionOfThread() {
-  _AllFunctionOfThread = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee15() {
-    return _regeneratorRuntime().wrap(function _callee15$(_context15) {
-      while (1) switch (_context15.prev = _context15.next) {
+  _AllFunctionOfThread = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee21() {
+    return _regeneratorRuntime().wrap(function _callee21$(_context21) {
+      while (1) switch (_context21.prev = _context21.next) {
         case 0:
           if (!websocketOnAndOff) {
-            _context15.next = 3;
+            _context21.next = 3;
             break;
           }
-          _context15.next = 3;
+          _context21.next = 3;
           return CheckAllDevices();
         case 3:
         case "end":
-          return _context15.stop();
+          return _context21.stop();
       }
-    }, _callee15);
+    }, _callee21);
   }));
   return _AllFunctionOfThread.apply(this, arguments);
 }
@@ -385,154 +406,249 @@ function main() {
   return _main.apply(this, arguments);
 } // Call main thread function.
 function _main() {
-  _main = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee17() {
+  _main = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee23() {
     var _executeWorker;
-    return _regeneratorRuntime().wrap(function _callee17$(_context17) {
-      while (1) switch (_context17.prev = _context17.next) {
+    return _regeneratorRuntime().wrap(function _callee23$(_context23) {
+      while (1) switch (_context23.prev = _context23.next) {
         case 0:
           _executeWorker = /*#__PURE__*/function () {
-            var _ref15 = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee16() {
+            var _ref21 = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee22() {
               var result;
-              return _regeneratorRuntime().wrap(function _callee16$(_context16) {
-                while (1) switch (_context16.prev = _context16.next) {
+              return _regeneratorRuntime().wrap(function _callee22$(_context22) {
+                while (1) switch (_context22.prev = _context22.next) {
                   case 0:
-                    if (AlertOnAndOff) {
-                      _context16.next = 2;
+                    if (ThreadOnAndOff) {
+                      _context22.next = 2;
                       break;
                     }
-                    return _context16.abrupt("return");
+                    return _context22.abrupt("return");
                   case 2:
-                    _context16.prev = 2;
-                    _context16.next = 5;
+                    _context22.prev = 2;
+                    _context22.next = 5;
                     return AllFunctionOfThread();
                   case 5:
-                    _context16.next = 7;
+                    deleteOldOtps();
+                    _context22.next = 8;
                     return runWorker();
-                  case 7:
-                    result = _context16.sent;
+                  case 8:
+                    result = _context22.sent;
                     console.log("Worker result:", result);
                     console.log("Thread success.");
-                    _context16.next = 15;
+                    _context22.next = 16;
                     break;
-                  case 12:
-                    _context16.prev = 12;
-                    _context16.t0 = _context16["catch"](2);
-                    console.error('Error in executing worker:', _context16.t0);
-                  case 15:
-                    _context16.prev = 15;
+                  case 13:
+                    _context22.prev = 13;
+                    _context22.t0 = _context22["catch"](2);
+                    console.error('Error in executing worker:', _context22.t0);
+                  case 16:
+                    _context22.prev = 16;
                     setTimeout(_executeWorker, Timer);
-                    return _context16.finish(15);
-                  case 18:
+                    return _context22.finish(16);
+                  case 19:
                   case "end":
-                    return _context16.stop();
+                    return _context22.stop();
                 }
-              }, _callee16, null, [[2, 12, 15, 18]]);
+              }, _callee22, null, [[2, 13, 16, 19]]);
             }));
             return function executeWorker() {
-              return _ref15.apply(this, arguments);
+              return _ref21.apply(this, arguments);
             };
           }();
           _executeWorker();
         case 2:
         case "end":
-          return _context17.stop();
+          return _context23.stop();
       }
-    }, _callee17);
+    }, _callee23);
   }));
   return _main.apply(this, arguments);
 }
 main();
 
-// Api of user login.
-app.post('/api/login', /*#__PURE__*/function () {
-  var _ref7 = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee7(req, res) {
-    var _req$body, username, password, existingUser, isPasswordValid, token;
+// Function to send mail.
+var SendmailTootp = /*#__PURE__*/function () {
+  var _ref7 = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee7(username, MailSubject, MailText) {
+    var transporter, mailotpions;
     return _regeneratorRuntime().wrap(function _callee7$(_context7) {
       while (1) switch (_context7.prev = _context7.next) {
         case 0:
-          _context7.prev = 0;
-          _req$body = req.body, username = _req$body.username, password = _req$body.password;
-          _context7.next = 4;
-          return User.findOne({
-            username: username
+          transporter = nodemailer.createTransport({
+            host: MailHost,
+            port: MailPort,
+            secure: MailSecure,
+            auth: {
+              user: MailUser,
+              pass: MailPassword
+            }
           });
-        case 4:
-          existingUser = _context7.sent;
-          if (existingUser) {
-            _context7.next = 7;
-            break;
-          }
-          return _context7.abrupt("return", res.status(404).json({
-            message: "User not found",
-            status: 0
-          }));
-        case 7:
-          _context7.next = 9;
-          return Auth.checkPassword(existingUser.HashPassword, password);
-        case 9:
-          isPasswordValid = _context7.sent;
-          if (isPasswordValid) {
-            _context7.next = 12;
-            break;
-          }
-          return _context7.abrupt("return", res.status(401).json({
-            message: "Incorrect password",
-            status: 0
-          }));
-        case 12:
-          token = Auth.GenerateToken(username);
-          return _context7.abrupt("return", res.status(200).json({
-            message: "Login successful",
-            status: 1,
-            token: token
-          }));
-        case 16:
-          _context7.prev = 16;
-          _context7.t0 = _context7["catch"](0);
-          res.status(500).json({
-            message: 'Internal server error',
-            error: _context7.t0.message,
-            status: -1
-          });
-        case 19:
+          mailotpions = {
+            from: MailUser,
+            to: username,
+            subject: MailSubject,
+            text: MailText
+          };
+          _context7.prev = 2;
+          _context7.next = 5;
+          return transporter.sendMail(mailotpions);
+        case 5:
+          return _context7.abrupt("return", true);
+        case 8:
+          _context7.prev = 8;
+          _context7.t0 = _context7["catch"](2);
+          return _context7.abrupt("return", false);
+        case 11:
         case "end":
           return _context7.stop();
       }
-    }, _callee7, null, [[0, 16]]);
+    }, _callee7, null, [[2, 8]]);
   }));
-  return function (_x8, _x9) {
+  return function SendmailTootp(_x8, _x9, _x10) {
     return _ref7.apply(this, arguments);
   };
-}());
+}();
 
-// Api of create user.
-app.post('/api/signup', /*#__PURE__*/function () {
+// Generates a random number between 100000 and 999999
+var generateRandomOTP = function generateRandomOTP() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+};
+
+// Api of user login.
+app.post('/api/login', /*#__PURE__*/function () {
   var _ref8 = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee8(req, res) {
-    var _req$body2, name, username, password, existingUser, HashPassword, newUser, newGeofence;
+    var _req$body, username, password, existingUser, isPasswordValid, token;
     return _regeneratorRuntime().wrap(function _callee8$(_context8) {
       while (1) switch (_context8.prev = _context8.next) {
         case 0:
           _context8.prev = 0;
-          _req$body2 = req.body, name = _req$body2.name, username = _req$body2.username, password = _req$body2.password;
+          _req$body = req.body, username = _req$body.username, password = _req$body.password;
           _context8.next = 4;
           return User.findOne({
             username: username
           });
         case 4:
           existingUser = _context8.sent;
-          if (!existingUser) {
+          if (existingUser) {
             _context8.next = 7;
             break;
           }
-          return _context8.abrupt("return", res.status(400).json({
-            message: "User already exists.",
+          return _context8.abrupt("return", res.status(404).json({
+            message: "User not found",
             status: 0
           }));
         case 7:
           _context8.next = 9;
-          return Auth.CreateHashPassword(password);
+          return Auth.checkPassword(existingUser.HashPassword, password);
         case 9:
-          HashPassword = _context8.sent;
+          isPasswordValid = _context8.sent;
+          if (isPasswordValid) {
+            _context8.next = 12;
+            break;
+          }
+          return _context8.abrupt("return", res.status(401).json({
+            message: "Incorrect password",
+            status: 0
+          }));
+        case 12:
+          token = Auth.GenerateToken(username);
+          return _context8.abrupt("return", res.status(200).json({
+            message: "Login successful",
+            status: 1,
+            token: token
+          }));
+        case 16:
+          _context8.prev = 16;
+          _context8.t0 = _context8["catch"](0);
+          res.status(500).json({
+            message: 'Internal server error',
+            error: _context8.t0.message,
+            status: -1
+          });
+        case 19:
+        case "end":
+          return _context8.stop();
+      }
+    }, _callee8, null, [[0, 16]]);
+  }));
+  return function (_x11, _x12) {
+    return _ref8.apply(this, arguments);
+  };
+}());
+
+// Api of create user.
+app.post('/api/signup', /*#__PURE__*/function () {
+  var _ref9 = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee9(req, res) {
+    var _req$body2, name, username, password, otp, otpData, existingUser, HashPassword, newUser, newGeofence;
+    return _regeneratorRuntime().wrap(function _callee9$(_context9) {
+      while (1) switch (_context9.prev = _context9.next) {
+        case 0:
+          _context9.prev = 0;
+          _req$body2 = req.body, name = _req$body2.name, username = _req$body2.username, password = _req$body2.password, otp = _req$body2.otp;
+          if (!(!name || name.trim() === '')) {
+            _context9.next = 4;
+            break;
+          }
+          return _context9.abrupt("return", res.status(400).json({
+            status: 0,
+            message: 'Invalid name'
+          }));
+        case 4:
+          if (!(!username || username.trim() === '')) {
+            _context9.next = 6;
+            break;
+          }
+          return _context9.abrupt("return", res.status(400).json({
+            status: 0,
+            message: 'Invalid username'
+          }));
+        case 6:
+          if (!(!password || password.trim() === '')) {
+            _context9.next = 8;
+            break;
+          }
+          return _context9.abrupt("return", res.status(400).json({
+            status: 0,
+            message: 'Invalid password'
+          }));
+        case 8:
+          if (!(!otp || otp.trim() === '')) {
+            _context9.next = 10;
+            break;
+          }
+          return _context9.abrupt("return", res.status(400).json({
+            status: 0,
+            message: 'Invalid OTP'
+          }));
+        case 10:
+          otpData = otpStore[username];
+          if (!(!otpData || otpData.otp !== otp || Date.now() - otpData.timestamp > 5 * 60 * 1000)) {
+            _context9.next = 13;
+            break;
+          }
+          return _context9.abrupt("return", res.status(400).json({
+            status: 0,
+            message: 'Invalid or expired OTP'
+          }));
+        case 13:
+          delete otpStore[username];
+          _context9.next = 16;
+          return User.findOne({
+            username: username
+          });
+        case 16:
+          existingUser = _context9.sent;
+          if (!existingUser) {
+            _context9.next = 19;
+            break;
+          }
+          return _context9.abrupt("return", res.status(400).json({
+            message: "User already exists.",
+            status: 0
+          }));
+        case 19:
+          _context9.next = 21;
+          return Auth.CreateHashPassword(password);
+        case 21:
+          HashPassword = _context9.sent;
           newUser = new User({
             name: name,
             username: username,
@@ -546,138 +662,41 @@ app.post('/api/signup', /*#__PURE__*/function () {
             alert: false,
             updatedtime: Date.now()
           });
-          _context8.next = 14;
+          _context9.next = 26;
           return Promise.all([newUser.save(), newGeofence.save()]);
-        case 14:
-          return _context8.abrupt("return", res.status(201).json({
+        case 26:
+          return _context9.abrupt("return", res.status(201).json({
             message: "Signup successful",
             status: 1
           }));
-        case 17:
-          _context8.prev = 17;
-          _context8.t0 = _context8["catch"](0);
-          return _context8.abrupt("return", res.status(500).json({
-            message: 'Internal server error',
-            error: _context8.t0.message,
-            status: -1
-          }));
-        case 20:
-        case "end":
-          return _context8.stop();
-      }
-    }, _callee8, null, [[0, 17]]);
-  }));
-  return function (_x10, _x11) {
-    return _ref8.apply(this, arguments);
-  };
-}());
-
-// POST handler for receiving set alert.
-app.post('/api/setAlert', Auth.verifyToken, /*#__PURE__*/function () {
-  var _ref9 = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee9(req, res) {
-    var alert, authHeader, username, existingUser, newGeofence;
-    return _regeneratorRuntime().wrap(function _callee9$(_context9) {
-      while (1) switch (_context9.prev = _context9.next) {
-        case 0:
-          _context9.prev = 0;
-          alert = req.body.alert;
-          authHeader = req.headers.authorization;
-          if (!(!authHeader || !authHeader.startsWith("Bearer "))) {
-            _context9.next = 5;
-            break;
-          }
-          return _context9.abrupt("return", res.status(401).json({
-            message: 'Authorization token is missing or invalid.',
-            status: 0
-          }));
-        case 5:
-          username = req.username;
-          if (!(!username || typeof username !== 'string')) {
-            _context9.next = 8;
-            break;
-          }
-          return _context9.abrupt("return", res.status(400).json({
-            message: 'Username is required and should be a string.',
-            status: 0
-          }));
-        case 8:
-          if (!(typeof alert !== 'boolean')) {
-            _context9.next = 10;
-            break;
-          }
-          return _context9.abrupt("return", res.status(400).json({
-            message: 'Alert must be a boolean value.',
-            status: 0
-          }));
-        case 10:
-          _context9.next = 12;
-          return Geofence.findOne({
-            username: username
-          });
-        case 12:
-          existingUser = _context9.sent;
-          if (!existingUser) {
-            _context9.next = 19;
-            break;
-          }
-          _context9.next = 16;
-          return Geofence.findOneAndUpdate({
-            username: username
-          }, {
-            alert: alert,
-            updatedtime: Date.now()
-          });
-        case 16:
-          return _context9.abrupt("return", res.status(200).json({
-            message: 'Alert updated successfully!',
-            status: 1
-          }));
-        case 19:
-          newGeofence = new Geofence({
-            username: username,
-            polygonCoordinates: [],
-            LocationHistory: [],
-            alert: alert,
-            updatedtime: Date.now()
-          });
-          _context9.next = 22;
-          return newGeofence.save();
-        case 22:
-          return _context9.abrupt("return", res.status(201).json({
-            message: 'Geofence created and alert set successfully!',
-            status: 1
-          }));
-        case 23:
-          _context9.next = 28;
-          break;
-        case 25:
-          _context9.prev = 25;
+        case 29:
+          _context9.prev = 29;
           _context9.t0 = _context9["catch"](0);
           return _context9.abrupt("return", res.status(500).json({
             message: 'Internal server error',
             error: _context9.t0.message,
             status: -1
           }));
-        case 28:
+        case 32:
         case "end":
           return _context9.stop();
       }
-    }, _callee9, null, [[0, 25]]);
+    }, _callee9, null, [[0, 29]]);
   }));
-  return function (_x12, _x13) {
+  return function (_x13, _x14) {
     return _ref9.apply(this, arguments);
   };
 }());
 
-// POST handler for receiving set member.
-app.post('/api/setMember', Auth.verifyToken, /*#__PURE__*/function () {
+// POST handler for receiving set alert.
+app.post('/api/setAlert', Auth.verifyToken, /*#__PURE__*/function () {
   var _ref10 = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee10(req, res) {
-    var members, authHeader, username, existingUser, newGeofence;
+    var alert, authHeader, username, existingUser, newGeofence;
     return _regeneratorRuntime().wrap(function _callee10$(_context10) {
       while (1) switch (_context10.prev = _context10.next) {
         case 0:
           _context10.prev = 0;
-          members = req.body.members;
+          alert = req.body.alert;
           authHeader = req.headers.authorization;
           if (!(!authHeader || !authHeader.startsWith("Bearer "))) {
             _context10.next = 5;
@@ -698,12 +717,12 @@ app.post('/api/setMember', Auth.verifyToken, /*#__PURE__*/function () {
             status: 0
           }));
         case 8:
-          if (Array.isArray(members)) {
+          if (!(typeof alert !== 'boolean')) {
             _context10.next = 10;
             break;
           }
           return _context10.abrupt("return", res.status(400).json({
-            message: 'Members must be an array.',
+            message: 'Alert must be a boolean value.',
             status: 0
           }));
         case 10:
@@ -721,12 +740,12 @@ app.post('/api/setMember', Auth.verifyToken, /*#__PURE__*/function () {
           return Geofence.findOneAndUpdate({
             username: username
           }, {
-            members: members,
+            alert: alert,
             updatedtime: Date.now()
           });
         case 16:
           return _context10.abrupt("return", res.status(200).json({
-            message: 'Members updated successfully!',
+            message: 'Alert updated successfully!',
             status: 1
           }));
         case 19:
@@ -734,15 +753,14 @@ app.post('/api/setMember', Auth.verifyToken, /*#__PURE__*/function () {
             username: username,
             polygonCoordinates: [],
             LocationHistory: [],
-            members: members,
-            alert: false,
+            alert: alert,
             updatedtime: Date.now()
           });
           _context10.next = 22;
           return newGeofence.save();
         case 22:
           return _context10.abrupt("return", res.status(201).json({
-            message: 'Geofence created and members set successfully!',
+            message: 'Geofence created and alert set successfully!',
             status: 1
           }));
         case 23:
@@ -762,20 +780,20 @@ app.post('/api/setMember', Auth.verifyToken, /*#__PURE__*/function () {
       }
     }, _callee10, null, [[0, 25]]);
   }));
-  return function (_x14, _x15) {
+  return function (_x15, _x16) {
     return _ref10.apply(this, arguments);
   };
 }());
 
-// POST handler for receiving polygon coordinates.
-app.post('/api/setgeofencing', Auth.verifyToken, /*#__PURE__*/function () {
+// POST handler for receiving set member.
+app.post('/api/setMember', Auth.verifyToken, /*#__PURE__*/function () {
   var _ref11 = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee11(req, res) {
-    var polygonCoordinates, authHeader, username, geofence;
+    var members, authHeader, username, existingUser, newGeofence;
     return _regeneratorRuntime().wrap(function _callee11$(_context11) {
       while (1) switch (_context11.prev = _context11.next) {
         case 0:
           _context11.prev = 0;
-          polygonCoordinates = req.body.polygonCoordinates;
+          members = req.body.members;
           authHeader = req.headers.authorization;
           if (!(!authHeader || !authHeader.startsWith("Bearer "))) {
             _context11.next = 5;
@@ -786,26 +804,124 @@ app.post('/api/setgeofencing', Auth.verifyToken, /*#__PURE__*/function () {
             status: 0
           }));
         case 5:
-          if (Array.isArray(polygonCoordinates)) {
-            _context11.next = 7;
-            break;
-          }
-          return _context11.abrupt("return", res.status(400).json({
-            message: 'Polygon coordinates must be an array.',
-            status: 0
-          }));
-        case 7:
           username = req.username;
           if (!(!username || typeof username !== 'string')) {
-            _context11.next = 10;
+            _context11.next = 8;
             break;
           }
           return _context11.abrupt("return", res.status(400).json({
             message: 'Username is required and should be a string.',
             status: 0
           }));
+        case 8:
+          if (Array.isArray(members)) {
+            _context11.next = 10;
+            break;
+          }
+          return _context11.abrupt("return", res.status(400).json({
+            message: 'Members must be an array.',
+            status: 0
+          }));
         case 10:
           _context11.next = 12;
+          return Geofence.findOne({
+            username: username
+          });
+        case 12:
+          existingUser = _context11.sent;
+          if (!existingUser) {
+            _context11.next = 19;
+            break;
+          }
+          _context11.next = 16;
+          return Geofence.findOneAndUpdate({
+            username: username
+          }, {
+            members: members,
+            updatedtime: Date.now()
+          });
+        case 16:
+          return _context11.abrupt("return", res.status(200).json({
+            message: 'Members updated successfully!',
+            status: 1
+          }));
+        case 19:
+          newGeofence = new Geofence({
+            username: username,
+            polygonCoordinates: [],
+            LocationHistory: [],
+            members: members,
+            alert: false,
+            updatedtime: Date.now()
+          });
+          _context11.next = 22;
+          return newGeofence.save();
+        case 22:
+          return _context11.abrupt("return", res.status(201).json({
+            message: 'Geofence created and members set successfully!',
+            status: 1
+          }));
+        case 23:
+          _context11.next = 28;
+          break;
+        case 25:
+          _context11.prev = 25;
+          _context11.t0 = _context11["catch"](0);
+          return _context11.abrupt("return", res.status(500).json({
+            message: 'Internal server error',
+            error: _context11.t0.message,
+            status: -1
+          }));
+        case 28:
+        case "end":
+          return _context11.stop();
+      }
+    }, _callee11, null, [[0, 25]]);
+  }));
+  return function (_x17, _x18) {
+    return _ref11.apply(this, arguments);
+  };
+}());
+
+// POST handler for receiving polygon coordinates.
+app.post('/api/setgeofencing', Auth.verifyToken, /*#__PURE__*/function () {
+  var _ref12 = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee12(req, res) {
+    var polygonCoordinates, authHeader, username, geofence;
+    return _regeneratorRuntime().wrap(function _callee12$(_context12) {
+      while (1) switch (_context12.prev = _context12.next) {
+        case 0:
+          _context12.prev = 0;
+          polygonCoordinates = req.body.polygonCoordinates;
+          authHeader = req.headers.authorization;
+          if (!(!authHeader || !authHeader.startsWith("Bearer "))) {
+            _context12.next = 5;
+            break;
+          }
+          return _context12.abrupt("return", res.status(401).json({
+            message: 'Authorization token is missing or invalid.',
+            status: 0
+          }));
+        case 5:
+          if (Array.isArray(polygonCoordinates)) {
+            _context12.next = 7;
+            break;
+          }
+          return _context12.abrupt("return", res.status(400).json({
+            message: 'Polygon coordinates must be an array.',
+            status: 0
+          }));
+        case 7:
+          username = req.username;
+          if (!(!username || typeof username !== 'string')) {
+            _context12.next = 10;
+            break;
+          }
+          return _context12.abrupt("return", res.status(400).json({
+            message: 'Username is required and should be a string.',
+            status: 0
+          }));
+        case 10:
+          _context12.next = 12;
           return Geofence.findOneAndUpdate({
             username: username
           }, {
@@ -816,73 +932,73 @@ app.post('/api/setgeofencing', Auth.verifyToken, /*#__PURE__*/function () {
             upsert: true
           });
         case 12:
-          geofence = _context11.sent;
+          geofence = _context12.sent;
           res.status(200).json({
             message: 'Geofence updated or created successfully!',
             status: 1,
             geofence: geofence
           });
-          _context11.next = 20;
+          _context12.next = 20;
           break;
         case 16:
-          _context11.prev = 16;
-          _context11.t0 = _context11["catch"](0);
-          console.error(_context11.t0);
+          _context12.prev = 16;
+          _context12.t0 = _context12["catch"](0);
+          console.error(_context12.t0);
           res.status(500).json({
             message: 'Internal server error',
-            error: _context11.t0.message,
+            error: _context12.t0.message,
             status: -1
           });
         case 20:
         case "end":
-          return _context11.stop();
+          return _context12.stop();
       }
-    }, _callee11, null, [[0, 16]]);
+    }, _callee12, null, [[0, 16]]);
   }));
-  return function (_x16, _x17) {
-    return _ref11.apply(this, arguments);
+  return function (_x19, _x20) {
+    return _ref12.apply(this, arguments);
   };
 }());
 
 // GET handler for retrieving userData.
 app.get('/api/getUserData', Auth.verifyToken, /*#__PURE__*/function () {
-  var _ref12 = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee12(req, res) {
+  var _ref13 = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee13(req, res) {
     var authHeader, username, userData;
-    return _regeneratorRuntime().wrap(function _callee12$(_context12) {
-      while (1) switch (_context12.prev = _context12.next) {
+    return _regeneratorRuntime().wrap(function _callee13$(_context13) {
+      while (1) switch (_context13.prev = _context13.next) {
         case 0:
-          _context12.prev = 0;
+          _context13.prev = 0;
           authHeader = req.headers.authorization;
           if (!(!authHeader || !authHeader.startsWith("Bearer "))) {
-            _context12.next = 4;
+            _context13.next = 4;
             break;
           }
-          return _context12.abrupt("return", res.status(401).json({
+          return _context13.abrupt("return", res.status(401).json({
             message: 'Authorization token is missing or invalid.',
             status: 0
           }));
         case 4:
           username = req.username;
           if (!(!username || typeof username !== 'string')) {
-            _context12.next = 7;
+            _context13.next = 7;
             break;
           }
-          return _context12.abrupt("return", res.status(400).json({
+          return _context13.abrupt("return", res.status(400).json({
             message: 'Username is required and should be a string.',
             status: 0
           }));
         case 7:
-          _context12.next = 9;
+          _context13.next = 9;
           return Geofence.findOne({
             username: username
           });
         case 9:
-          userData = _context12.sent;
+          userData = _context13.sent;
           if (!(userData && Array.isArray(userData.polygonCoordinates))) {
-            _context12.next = 14;
+            _context13.next = 14;
             break;
           }
-          return _context12.abrupt("return", res.status(200).json({
+          return _context13.abrupt("return", res.status(200).json({
             message: 'User data retrieved successfully!',
             status: 1,
             polygonCoordinates: userData.polygonCoordinates,
@@ -892,71 +1008,157 @@ app.get('/api/getUserData', Auth.verifyToken, /*#__PURE__*/function () {
             lastUpdateTime: userData.updatedtime
           }));
         case 14:
-          return _context12.abrupt("return", res.status(404).json({
+          return _context13.abrupt("return", res.status(404).json({
             message: 'User data not found for the specified username.',
             status: 0
           }));
         case 15:
-          _context12.next = 20;
+          _context13.next = 20;
           break;
         case 17:
-          _context12.prev = 17;
-          _context12.t0 = _context12["catch"](0);
-          return _context12.abrupt("return", res.status(500).json({
+          _context13.prev = 17;
+          _context13.t0 = _context13["catch"](0);
+          return _context13.abrupt("return", res.status(500).json({
             message: 'Internal server error',
-            error: _context12.t0.message,
+            error: _context13.t0.message,
             status: -1
           }));
         case 20:
         case "end":
-          return _context12.stop();
+          return _context13.stop();
       }
-    }, _callee12, null, [[0, 17]]);
+    }, _callee13, null, [[0, 17]]);
   }));
-  return function (_x18, _x19) {
-    return _ref12.apply(this, arguments);
+  return function (_x21, _x22) {
+    return _ref13.apply(this, arguments);
+  };
+}());
+
+// GET handler for retrieving member location history.
+app.get('/api/member/location-history', Auth.verifyToken, /*#__PURE__*/function () {
+  var _ref14 = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee14(req, res) {
+    var authHeader, MemberUserName, username, userData, MemberUserData;
+    return _regeneratorRuntime().wrap(function _callee14$(_context14) {
+      while (1) switch (_context14.prev = _context14.next) {
+        case 0:
+          _context14.prev = 0;
+          authHeader = req.headers.authorization;
+          MemberUserName = req.headers.memberusername;
+          if (!(!authHeader || !authHeader.startsWith("Bearer "))) {
+            _context14.next = 5;
+            break;
+          }
+          return _context14.abrupt("return", res.status(401).json({
+            message: 'Authorization token is missing or invalid.',
+            status: 0
+          }));
+        case 5:
+          if (!(!MemberUserName || typeof MemberUserName !== 'string' || MemberUserName === null)) {
+            _context14.next = 7;
+            break;
+          }
+          return _context14.abrupt("return", res.status(400).json({
+            message: 'MemberUserName is required and should be a string.',
+            status: 0
+          }));
+        case 7:
+          username = req.username;
+          if (!(!username || typeof username !== 'string')) {
+            _context14.next = 10;
+            break;
+          }
+          return _context14.abrupt("return", res.status(400).json({
+            message: 'Username is required and should be a string.',
+            status: 0
+          }));
+        case 10:
+          _context14.next = 12;
+          return Geofence.findOne({
+            username: username
+          });
+        case 12:
+          userData = _context14.sent;
+          _context14.next = 15;
+          return Geofence.findOne({
+            username: MemberUserName
+          });
+        case 15:
+          MemberUserData = _context14.sent;
+          if (!(userData && MemberUserData && Array.isArray(userData.members) && userData.members.includes(MemberUserName))) {
+            _context14.next = 20;
+            break;
+          }
+          return _context14.abrupt("return", res.status(200).json({
+            message: 'User data retrieved successfully!',
+            status: 1,
+            LocationHistory: MemberUserData.LocationHistory
+          }));
+        case 20:
+          return _context14.abrupt("return", res.status(404).json({
+            message: 'Member location history data not found for the specified username.',
+            status: 0
+          }));
+        case 21:
+          _context14.next = 26;
+          break;
+        case 23:
+          _context14.prev = 23;
+          _context14.t0 = _context14["catch"](0);
+          return _context14.abrupt("return", res.status(500).json({
+            message: 'Internal server error',
+            error: _context14.t0.message,
+            status: -1
+          }));
+        case 26:
+        case "end":
+          return _context14.stop();
+      }
+    }, _callee14, null, [[0, 23]]);
+  }));
+  return function (_x23, _x24) {
+    return _ref14.apply(this, arguments);
   };
 }());
 
 // POST handler for receiving location history.
 app.post('/api/setLocationHistory', Auth.verifyToken, /*#__PURE__*/function () {
-  var _ref13 = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee13(req, res) {
+  var _ref15 = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee15(req, res) {
     var locationHistory, authHeader, username, geofence;
-    return _regeneratorRuntime().wrap(function _callee13$(_context13) {
-      while (1) switch (_context13.prev = _context13.next) {
+    return _regeneratorRuntime().wrap(function _callee15$(_context15) {
+      while (1) switch (_context15.prev = _context15.next) {
         case 0:
-          _context13.prev = 0;
+          _context15.prev = 0;
           locationHistory = req.body.locationHistory;
           authHeader = req.headers.authorization;
           if (!(!authHeader || !authHeader.startsWith("Bearer "))) {
-            _context13.next = 5;
+            _context15.next = 5;
             break;
           }
-          return _context13.abrupt("return", res.status(401).json({
+          return _context15.abrupt("return", res.status(401).json({
             message: 'Authorization token is missing or invalid.',
             status: 0
           }));
         case 5:
           if (Array.isArray(locationHistory)) {
-            _context13.next = 7;
+            _context15.next = 7;
             break;
           }
-          return _context13.abrupt("return", res.status(400).json({
+          return _context15.abrupt("return", res.status(400).json({
             message: 'Location history coordinates must be an array.',
             status: 0
           }));
         case 7:
           username = req.username;
           if (!(!username || typeof username !== 'string')) {
-            _context13.next = 10;
+            _context15.next = 10;
             break;
           }
-          return _context13.abrupt("return", res.status(400).json({
+          return _context15.abrupt("return", res.status(400).json({
             message: 'Username is required and should be a string.',
             status: 0
           }));
         case 10:
-          _context13.next = 12;
+          _context15.next = 12;
           return Geofence.findOneAndUpdate({
             username: username
           }, {
@@ -967,77 +1169,77 @@ app.post('/api/setLocationHistory', Auth.verifyToken, /*#__PURE__*/function () {
             upsert: true
           });
         case 12:
-          geofence = _context13.sent;
-          return _context13.abrupt("return", res.status(200).json({
+          geofence = _context15.sent;
+          return _context15.abrupt("return", res.status(200).json({
             message: 'Location history updated or created successfully!',
             status: 1,
             geofence: geofence
           }));
         case 16:
-          _context13.prev = 16;
-          _context13.t0 = _context13["catch"](0);
-          console.error(_context13.t0);
-          return _context13.abrupt("return", res.status(500).json({
+          _context15.prev = 16;
+          _context15.t0 = _context15["catch"](0);
+          console.error(_context15.t0);
+          return _context15.abrupt("return", res.status(500).json({
             message: 'Internal server error',
-            error: _context13.t0.message,
+            error: _context15.t0.message,
             status: -1
           }));
         case 20:
         case "end":
-          return _context13.stop();
+          return _context15.stop();
       }
-    }, _callee13, null, [[0, 16]]);
+    }, _callee15, null, [[0, 16]]);
   }));
-  return function (_x20, _x21) {
-    return _ref13.apply(this, arguments);
+  return function (_x25, _x26) {
+    return _ref15.apply(this, arguments);
   };
 }());
 
-// GET handler for retrieving live location.
+// POST handler for retrieving live location.
 app.post('/api/livelocation', Auth.verifyToken, /*#__PURE__*/function () {
-  var _ref14 = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee14(req, res) {
+  var _ref16 = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee16(req, res) {
     var authHeader, usernameOfLiveLocation, username, liveLocations, _iterator2, _step2, user, liveLocationData, coordinates;
-    return _regeneratorRuntime().wrap(function _callee14$(_context14) {
-      while (1) switch (_context14.prev = _context14.next) {
+    return _regeneratorRuntime().wrap(function _callee16$(_context16) {
+      while (1) switch (_context16.prev = _context16.next) {
         case 0:
-          _context14.prev = 0;
+          _context16.prev = 0;
           authHeader = req.headers.authorization;
           usernameOfLiveLocation = req.body.usernameOfLiveLocation;
           if (!(!authHeader || !authHeader.startsWith("Bearer "))) {
-            _context14.next = 5;
+            _context16.next = 5;
             break;
           }
-          return _context14.abrupt("return", res.status(401).json({
+          return _context16.abrupt("return", res.status(401).json({
             message: 'Authorization token is missing or invalid.',
             status: 0
           }));
         case 5:
           username = req.username;
           if (!(!username || !Array.isArray(usernameOfLiveLocation) || usernameOfLiveLocation.length === 0)) {
-            _context14.next = 8;
+            _context16.next = 8;
             break;
           }
-          return _context14.abrupt("return", res.status(400).json({
+          return _context16.abrupt("return", res.status(400).json({
             message: 'Username and usernameOfLiveLocation are required and usernameOfLiveLocation should be an array.',
             status: 0
           }));
         case 8:
           liveLocations = {};
           _iterator2 = _createForOfIteratorHelper(usernameOfLiveLocation);
-          _context14.prev = 10;
+          _context16.prev = 10;
           _iterator2.s();
         case 12:
           if ((_step2 = _iterator2.n()).done) {
-            _context14.next = 20;
+            _context16.next = 20;
             break;
           }
           user = _step2.value;
           liveLocationData = connections[user];
           if (!(user === username)) {
-            _context14.next = 17;
+            _context16.next = 17;
             break;
           }
-          return _context14.abrupt("continue", 18);
+          return _context16.abrupt("continue", 18);
         case 17:
           if (liveLocationData && liveLocationData.location) {
             coordinates = {
@@ -1047,50 +1249,417 @@ app.post('/api/livelocation', Auth.verifyToken, /*#__PURE__*/function () {
             liveLocations[user] = coordinates;
           }
         case 18:
-          _context14.next = 12;
+          _context16.next = 12;
           break;
         case 20:
-          _context14.next = 25;
+          _context16.next = 25;
           break;
         case 22:
-          _context14.prev = 22;
-          _context14.t0 = _context14["catch"](10);
-          _iterator2.e(_context14.t0);
+          _context16.prev = 22;
+          _context16.t0 = _context16["catch"](10);
+          _iterator2.e(_context16.t0);
         case 25:
-          _context14.prev = 25;
+          _context16.prev = 25;
           _iterator2.f();
-          return _context14.finish(25);
+          return _context16.finish(25);
         case 28:
           if (!(Object.keys(liveLocations).length === 0)) {
-            _context14.next = 30;
+            _context16.next = 30;
             break;
           }
-          return _context14.abrupt("return", res.status(200).json({
+          return _context16.abrupt("return", res.status(200).json({
             message: 'No live locations found for the specified usernames.',
             status: 1
           }));
         case 30:
-          return _context14.abrupt("return", res.status(200).json({
+          return _context16.abrupt("return", res.status(200).json({
             message: 'Live locations retrieved successfully!',
             data: liveLocations,
             status: 1
           }));
         case 33:
-          _context14.prev = 33;
-          _context14.t1 = _context14["catch"](0);
-          return _context14.abrupt("return", res.status(500).json({
+          _context16.prev = 33;
+          _context16.t1 = _context16["catch"](0);
+          return _context16.abrupt("return", res.status(500).json({
             message: 'Internal server error',
-            error: _context14.t1.message,
+            error: _context16.t1.message,
             status: -1
           }));
         case 36:
         case "end":
-          return _context14.stop();
+          return _context16.stop();
       }
-    }, _callee14, null, [[0, 33], [10, 22, 25, 28]]);
+    }, _callee16, null, [[0, 33], [10, 22, 25, 28]]);
   }));
-  return function (_x22, _x23) {
-    return _ref14.apply(this, arguments);
+  return function (_x27, _x28) {
+    return _ref16.apply(this, arguments);
+  };
+}());
+
+// POST handler for sending OTP to username.
+app.post('/api/send-otp', /*#__PURE__*/function () {
+  var _ref17 = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee17(req, res) {
+    var _req$body3, username, callName, existingUser, otp, _MailSubject, _MailText, result;
+    return _regeneratorRuntime().wrap(function _callee17$(_context17) {
+      while (1) switch (_context17.prev = _context17.next) {
+        case 0:
+          _context17.prev = 0;
+          _req$body3 = req.body, username = _req$body3.username, callName = _req$body3.callName;
+          if (!(!username || username.trim() === '')) {
+            _context17.next = 4;
+            break;
+          }
+          return _context17.abrupt("return", res.status(400).json({
+            status: 0,
+            message: 'Invalid username'
+          }));
+        case 4:
+          if (!(!callName || callName.trim() === '')) {
+            _context17.next = 6;
+            break;
+          }
+          return _context17.abrupt("return", res.status(400).json({
+            status: 0,
+            message: 'Invalid callName'
+          }));
+        case 6:
+          if (!(callName === "1")) {
+            _context17.next = 12;
+            break;
+          }
+          _context17.next = 9;
+          return User.findOne({
+            username: username
+          });
+        case 9:
+          existingUser = _context17.sent;
+          if (existingUser) {
+            _context17.next = 12;
+            break;
+          }
+          return _context17.abrupt("return", res.status(404).json({
+            message: "User not found",
+            status: 0
+          }));
+        case 12:
+          otp = generateRandomOTP();
+          _MailSubject = "Your Geofencing OTP Code";
+          _MailText = "\n    Dear User,\n    \n    Thank you for using our geofencing services. To secure your account and verify your identity,\n    we have generated a One-Time Password (OTP) for you.\n\n    Your OTP code is: ".concat(otp, "\n\n    Please enter this code in the application to complete your verification process.\n    This OTP is valid for only 5 minutes and should not be shared with anyone.\n    If you did not request this OTP, please disregard this message.\n\n    Thank you for your attention.\n\n    Best regards,\n    The Geofencing Team\n    ");
+          _context17.next = 17;
+          return SendmailTootp(username, _MailSubject, _MailText);
+        case 17:
+          result = _context17.sent;
+          if (!result) {
+            _context17.next = 23;
+            break;
+          }
+          otpStore[username] = {
+            otp: otp,
+            timestamp: Date.now()
+          };
+          return _context17.abrupt("return", res.status(200).json({
+            message: 'OTP sent successfully!',
+            status: 1
+          }));
+        case 23:
+          return _context17.abrupt("return", res.status(500).json({
+            message: 'Failed to send OTP',
+            status: 0
+          }));
+        case 24:
+          _context17.next = 29;
+          break;
+        case 26:
+          _context17.prev = 26;
+          _context17.t0 = _context17["catch"](0);
+          return _context17.abrupt("return", res.status(500).json({
+            message: 'Internal server error',
+            error: _context17.t0.message,
+            status: -1
+          }));
+        case 29:
+        case "end":
+          return _context17.stop();
+      }
+    }, _callee17, null, [[0, 26]]);
+  }));
+  return function (_x29, _x30) {
+    return _ref17.apply(this, arguments);
+  };
+}());
+
+// POST handler for resetting password.
+app.post('/api/reset-password', /*#__PURE__*/function () {
+  var _ref18 = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee18(req, res) {
+    var _req$body4, username, password, otp, existingUser, otpData;
+    return _regeneratorRuntime().wrap(function _callee18$(_context18) {
+      while (1) switch (_context18.prev = _context18.next) {
+        case 0:
+          _context18.prev = 0;
+          _req$body4 = req.body, username = _req$body4.username, password = _req$body4.password, otp = _req$body4.otp;
+          if (!(!username || username.trim() === '')) {
+            _context18.next = 4;
+            break;
+          }
+          return _context18.abrupt("return", res.status(400).json({
+            status: 0,
+            message: 'Invalid username'
+          }));
+        case 4:
+          if (!(!password || password.trim() === '')) {
+            _context18.next = 6;
+            break;
+          }
+          return _context18.abrupt("return", res.status(400).json({
+            status: 0,
+            message: 'Invalid password'
+          }));
+        case 6:
+          if (!(!otp || otp.trim() === '')) {
+            _context18.next = 8;
+            break;
+          }
+          return _context18.abrupt("return", res.status(400).json({
+            status: 0,
+            message: 'Invalid OTP'
+          }));
+        case 8:
+          _context18.next = 10;
+          return User.findOne({
+            username: username
+          });
+        case 10:
+          existingUser = _context18.sent;
+          if (existingUser) {
+            _context18.next = 13;
+            break;
+          }
+          return _context18.abrupt("return", res.status(404).json({
+            status: 0,
+            message: 'User not found'
+          }));
+        case 13:
+          otpData = otpStore[username];
+          if (!(!otpData || otpData.otp !== otp || Date.now() - otpData.timestamp > 5 * 60 * 1000)) {
+            _context18.next = 16;
+            break;
+          }
+          return _context18.abrupt("return", res.status(400).json({
+            status: 0,
+            message: 'Invalid or expired OTP'
+          }));
+        case 16:
+          _context18.next = 18;
+          return Auth.CreateHashPassword(password);
+        case 18:
+          existingUser.HashPassword = _context18.sent;
+          _context18.next = 21;
+          return existingUser.save();
+        case 21:
+          delete otpStore[username];
+          return _context18.abrupt("return", res.status(200).json({
+            status: 1,
+            message: 'Password reset successfully!'
+          }));
+        case 25:
+          _context18.prev = 25;
+          _context18.t0 = _context18["catch"](0);
+          console.error(_context18.t0);
+          return _context18.abrupt("return", res.status(500).json({
+            status: -1,
+            message: 'Internal server error',
+            error: _context18.t0.message
+          }));
+        case 29:
+        case "end":
+          return _context18.stop();
+      }
+    }, _callee18, null, [[0, 25]]);
+  }));
+  return function (_x31, _x32) {
+    return _ref18.apply(this, arguments);
+  };
+}());
+
+// POST handler for changing password.
+app.post('/api/change-password', /*#__PURE__*/function () {
+  var _ref19 = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee19(req, res) {
+    var _req$body5, username, newPassword, oldPassword, existingUser, isPasswordValid;
+    return _regeneratorRuntime().wrap(function _callee19$(_context19) {
+      while (1) switch (_context19.prev = _context19.next) {
+        case 0:
+          _context19.prev = 0;
+          _req$body5 = req.body, username = _req$body5.username, newPassword = _req$body5.newPassword, oldPassword = _req$body5.oldPassword;
+          if (!(!username || username.trim() === '')) {
+            _context19.next = 4;
+            break;
+          }
+          return _context19.abrupt("return", res.status(400).json({
+            status: 0,
+            message: 'Invalid username'
+          }));
+        case 4:
+          if (!(!newPassword || newPassword.trim() === '')) {
+            _context19.next = 6;
+            break;
+          }
+          return _context19.abrupt("return", res.status(400).json({
+            status: 0,
+            message: 'Invalid new password'
+          }));
+        case 6:
+          if (!(!oldPassword || oldPassword.trim() === '')) {
+            _context19.next = 8;
+            break;
+          }
+          return _context19.abrupt("return", res.status(400).json({
+            status: 0,
+            message: 'Invalid old password'
+          }));
+        case 8:
+          _context19.next = 10;
+          return User.findOne({
+            username: username
+          });
+        case 10:
+          existingUser = _context19.sent;
+          if (existingUser) {
+            _context19.next = 13;
+            break;
+          }
+          return _context19.abrupt("return", res.status(404).json({
+            status: 0,
+            message: 'User not found'
+          }));
+        case 13:
+          _context19.next = 15;
+          return Auth.checkPassword(existingUser.HashPassword, oldPassword);
+        case 15:
+          isPasswordValid = _context19.sent;
+          if (isPasswordValid) {
+            _context19.next = 18;
+            break;
+          }
+          return _context19.abrupt("return", res.status(401).json({
+            message: "Incorrect old password",
+            status: 0
+          }));
+        case 18:
+          _context19.next = 20;
+          return Auth.CreateHashPassword(newPassword);
+        case 20:
+          existingUser.HashPassword = _context19.sent;
+          _context19.next = 23;
+          return existingUser.save();
+        case 23:
+          return _context19.abrupt("return", res.status(200).json({
+            status: 1,
+            message: 'Password change successfully!'
+          }));
+        case 26:
+          _context19.prev = 26;
+          _context19.t0 = _context19["catch"](0);
+          console.error(_context19.t0);
+          return _context19.abrupt("return", res.status(500).json({
+            status: -1,
+            message: 'Internal server error',
+            error: _context19.t0.message
+          }));
+        case 30:
+        case "end":
+          return _context19.stop();
+      }
+    }, _callee19, null, [[0, 26]]);
+  }));
+  return function (_x33, _x34) {
+    return _ref19.apply(this, arguments);
+  };
+}());
+
+// POST handler for set app coordinates.
+app.post('/api/setAppCoordinates', Auth.verifyToken, /*#__PURE__*/function () {
+  var _ref20 = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee20(req, res) {
+    var _existingUser$Locatio, authHeader, location, username, locationData, existingUser;
+    return _regeneratorRuntime().wrap(function _callee20$(_context20) {
+      while (1) switch (_context20.prev = _context20.next) {
+        case 0:
+          _context20.prev = 0;
+          authHeader = req.headers.authorization;
+          location = req.body.location;
+          if (!(!authHeader || !location)) {
+            _context20.next = 5;
+            break;
+          }
+          return _context20.abrupt("return", res.status(400).json({
+            error: 'Missing required fields'
+          }));
+        case 5:
+          if (authHeader.startsWith("Bearer ")) {
+            _context20.next = 7;
+            break;
+          }
+          return _context20.abrupt("return", res.status(401).json({
+            message: 'Authorization token is missing or invalid.',
+            status: 0
+          }));
+        case 7:
+          username = req.username;
+          if (username) {
+            _context20.next = 10;
+            break;
+          }
+          return _context20.abrupt("return", res.status(400).json({
+            message: 'Username is required.',
+            status: 0
+          }));
+        case 10:
+          locationData = location.map(function (data) {
+            return {
+              coordinates: [data.latitude, data.longitude],
+              time: new Date(data.epochDate * 1000)
+            };
+          });
+          _context20.next = 13;
+          return Geofence.findOne({
+            username: username
+          });
+        case 13:
+          existingUser = _context20.sent;
+          if (existingUser) {
+            _context20.next = 16;
+            break;
+          }
+          return _context20.abrupt("return", res.status(404).json({
+            message: 'User not found',
+            status: 0
+          }));
+        case 16:
+          console.log("calling", username);
+          (_existingUser$Locatio = existingUser.LocationHistory).push.apply(_existingUser$Locatio, _toConsumableArray(locationData));
+          _context20.next = 20;
+          return existingUser.save();
+        case 20:
+          res.status(200).json({
+            message: 'Location data received and updated successfully',
+            status: 1
+          });
+          _context20.next = 26;
+          break;
+        case 23:
+          _context20.prev = 23;
+          _context20.t0 = _context20["catch"](0);
+          res.status(500).json({
+            message: 'Server error',
+            status: -1
+          });
+        case 26:
+        case "end":
+          return _context20.stop();
+      }
+    }, _callee20, null, [[0, 23]]);
+  }));
+  return function (_x35, _x36) {
+    return _ref20.apply(this, arguments);
   };
 }());
 
