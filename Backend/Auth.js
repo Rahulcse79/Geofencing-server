@@ -51,7 +51,7 @@ const verifyToken = (req, res, next) => {
   }
 };
 
-// Export functions to be used in other modules
+// Export functions to be used in other  modules
 module.exports = {
     checkPassword,
     GenerateToken,
