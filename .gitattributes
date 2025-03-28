@@ -1,2 +1,5 @@
-# Auto detect text files and perform LF normalization
-* text=auto
+# Ignore dependencies
+node_modules/
+
+# Ignore build outputs
+dist/
